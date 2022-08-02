@@ -1,30 +1,35 @@
 from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
+import unittest
+import apache_beam as beam
 
-class WordCountTest(unittest.TestCase):
+class CountTest(unittest.TestCase):
 
-  # Our input data, which will make up the initial PCollection.
-  WORDS = [
-      "hi", "there", "hi", "hi", "sue", "bob",
-      "hi", "sue", "", "", "ZOW", "bob", ""
-  ]
+    def test_count(self):
+        # Our static input data, which will make up the initial PCollection.
+        WORDS = [
+            "hi", "there", "hi", "hi", "sue", "bob",
+            "hi", "sue", "", "", "ZOW", "bob", ""
+        ]
+        # Create a test pipeline.
+        with TestPipeline() as p:
 
-  # Our output data, which is the expected data that the final PCollection must match.
-  EXPECTED_COUNTS = ["hi: 5", "there: 1", "sue: 2", "bob: 2"]
+            # Create an input PCollection.
+            input = p | beam.Create(WORDS)
 
-  # Example test that tests the pipeline's transforms.
+            # Apply the Count transform under test.
+            output = input | beam.combiners.Count.PerElement()
 
-  def test_count_words(self):
-    with TestPipeline() as p:
+            # Assert on the results.
+            assert_that(
+                output,
+                equal_to([
+                    ("hi", 4),
+                    ("there", 1),
+                    ("sue", 2),
+                    ("bob", 2),
+                    ("", 3),
+                    ("ZOW", 1)]))
 
-      # Create a PCollection from the WORDS static input data.
-      input = p | beam.Create(WORDS)
-
-      # Run ALL the pipeline's transforms (in this case, the CountWords composite transform).
-      output = input | CountWords()
-
-      # Assert that the output PCollection matches the EXPECTED_COUNTS data.
-      assert_that(output, equal_to(EXPECTED_COUNTS), label='CheckOutput')
-
-    # The pipeline will run and verify the results.
+            # The pipeline will run and verify the results.
